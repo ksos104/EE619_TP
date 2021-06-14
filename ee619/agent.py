@@ -7,8 +7,8 @@ import numpy as np
 from numpy.core.defchararray import join
 import torch
 
-from actor import Actor
-from critic import Critic
+from ee619.actor import Actor
+from ee619.critic import Critic
 
 from collections import deque
 import random
@@ -48,12 +48,9 @@ class Agent:
         if len(self.memory) > self.batch_size:
             observations, actions, rewards, next_observations, done = self.get_sample()
 
-            # observations = torch.stack(list(observations), dim=0)
-            # actions = torch.stack(list(actions), dim=0)
             observations = torch.Tensor(observations)
             actions = torch.Tensor(actions)
             rewards = torch.Tensor(rewards).unsqueeze(dim=1)
-            # next_observations = torch.stack(list(next_observations), dim=0)
             next_observations = torch.Tensor(next_observations)
             done = torch.Tensor(done).unsqueeze(dim=1)
             
@@ -109,10 +106,6 @@ class Agent:
 
         action = self.actor.model(observation).cpu().detach().numpy()
         if is_training:
-            # noise = torch.Tensor(self.ounoise.noise())
-            # if torch.cuda.is_available():
-            #     noise = noise.cuda()
-
             action = action + max(self.epsilon, self.epsilon_min) * self.ounoise.noise()
             action = np.clip(action, -1.0, 1.0)
 

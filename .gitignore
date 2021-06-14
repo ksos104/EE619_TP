@@ -3,3 +3,4 @@ ee619/trained_models/
 ee619/__pycache__/
 ee619/logs/
 *.pkl
+logs/
