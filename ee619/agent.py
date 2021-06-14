@@ -1,11 +1,11 @@
 """Agent for a Walker2DBullet environment."""
+import os
 from os.path import abspath, dirname, realpath
 
 from gym.spaces.box import Box
 import numpy as np
 from numpy.core.defchararray import join
 import torch
-from torch.nn.modules import activation
 
 from actor import Actor
 from critic import Critic
@@ -14,7 +14,6 @@ from collections import deque
 import random
 
 ROOT = dirname(abspath(realpath(__file__)))  # path to the ee619 directory
-
 
 class Agent:
     """Agent for a Walker2DBullet environment."""
@@ -49,13 +48,19 @@ class Agent:
         if len(self.memory) > self.batch_size:
             observations, actions, rewards, next_observations, done = self.get_sample()
 
-            observations = torch.stack(list(observations), dim=0)
-            actions = torch.stack(list(actions), dim=0)
+            # observations = torch.stack(list(observations), dim=0)
+            # actions = torch.stack(list(actions), dim=0)
+            observations = torch.Tensor(observations)
+            actions = torch.Tensor(actions)
             rewards = torch.Tensor(rewards).unsqueeze(dim=1)
-            next_observations = torch.stack(list(next_observations), dim=0)
+            # next_observations = torch.stack(list(next_observations), dim=0)
+            next_observations = torch.Tensor(next_observations)
             done = torch.Tensor(done).unsqueeze(dim=1)
             
             if torch.cuda.is_available():
+                observations = observations.cuda()
+                actions = actions.cuda()
+                next_observations = next_observations.cuda()
                 rewards = rewards.cuda()
                 done = done.cuda()
 
@@ -102,16 +107,14 @@ class Agent:
         if torch.cuda.is_available():
             observation = observation.cuda()
 
-        action = self.actor.model(observation)
+        action = self.actor.model(observation).cpu().detach().numpy()
         if is_training:
-            noise = torch.Tensor(self.ounoise.noise())
-            if torch.cuda.is_available():
-                noise = noise.cuda()
+            # noise = torch.Tensor(self.ounoise.noise())
+            # if torch.cuda.is_available():
+            #     noise = noise.cuda()
 
-            action += max(self.epsilon, self.epsilon_min) * noise
-            action = torch.from_numpy(np.clip(action.cpu().detach().numpy(), -1.0, 1.0))
-            if torch.cuda.is_available():
-                action = action.cuda()
+            action = action + max(self.epsilon, self.epsilon_min) * self.ounoise.noise()
+            action = np.clip(action, -1.0, 1.0)
 
         return action
 
@@ -122,8 +125,8 @@ class Agent:
             path = join(ROOT, 'model.pth')
             self.policy.load_state_dict(torch.load(path))
         """
-        actor_model = join(ROOT, 'actor.pkl')
-        critic_model = join(ROOT, 'critic.pkl')
+        actor_model = os.path.join(ROOT, 'actor.pkl')
+        critic_model = os.path.join(ROOT, 'critic.pkl')
 
         self.actor.model.load_state_dict(torch.load(actor_model))
         self.critic.model.load_state_dict(torch.load(critic_model))
