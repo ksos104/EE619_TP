@@ -16,22 +16,27 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     env = gym.make('Walker2DBulletEnv-v0')
+    env.seed(0)
+    env.render()
     agent = Agent()
 
-    seed = 0
-    repeat = 10000
+    # seed = 0
+    # repeat = 10000
 
     best_reward = 0.0
 
-    for seed_ in range(seed, seed + repeat):
-        env.seed(seed_)
-
+    seed_ = 0
+    while True:
+    # for seed_ in range(seed, seed + repeat):
         observation = env.reset()
+        agent.ounoise.reset()
         done = False
 
         actor_loss = 0.0
         critic_loss = 0.0
         reward_sum = 0.0
+
+        agent.decay_epsilon()
 
         step = 0
         while not done:
@@ -52,13 +57,17 @@ def main():
         summary.add_scalar('reward', reward_sum, seed_)
 
         if reward_sum >= best_reward:
-            torch.save(agent.actor.target_model.state_dict(), '{}/actor.pkl'.format(output_dir, seed_))
-            torch.save(agent.critic.target_model.state_dict(), '{}/critic.pkl'.format(output_dir, seed_))
+            torch.save(agent.actor.model.state_dict(), '{}/actor.pkl'.format(output_dir, seed_))
+            torch.save(agent.critic.model.state_dict(), '{}/critic.pkl'.format(output_dir, seed_))
+            torch.save(agent.actor.target_model.state_dict(), '{}/actor_t.pkl'.format(output_dir, seed_))
+            torch.save(agent.critic.target_model.state_dict(), '{}/critic_t.pkl'.format(output_dir, seed_))
 
             with open('logs/{}.txt'.format(dir_name), 'a') as f:
                 f.write("(Episode {}: Reward {}) The best model parameters were saved.\n".format(seed_, reward_sum))
 
             best_reward = reward_sum
+
+        seed_ += 1
         
 if __name__ == '__main__':
     main()

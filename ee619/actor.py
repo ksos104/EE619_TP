@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 
 class Actor_Network(nn.Module):
     """
@@ -45,9 +46,9 @@ class Actor(object):
             self.model = self.model.cuda()
             self.target_model = self.target_model.cuda()
 
-    def update_model(self, q_value):
+    def update_model(self, q_values):
         with torch.autograd.set_detect_anomaly(True):
-            actor_loss = -1 * q_value.clone()
+            actor_loss = (-q_values).mean()
             self.optimizer.zero_grad()
             actor_loss.backward(retain_graph=True)
             self.optimizer.step()
@@ -55,10 +56,6 @@ class Actor(object):
             return actor_loss
 
     def update_target_model(self):
-        with torch.no_grad():
-            model_dict = self.model.state_dict()
-            target_model_dict = self.target_model.state_dict()
-
-            for key in model_dict.keys():
-                target_model_dict[key] = self.tau * model_dict[key] + (1 - self.tau) * target_model_dict[key]
+        for target_weight, weight in zip(self.target_model.parameters(), self.model.parameters()):
+            target_weight.data.copy_(target_weight.data * (1.0 - self.tau) + weight.data * self.tau)
             

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-
+import numpy as np
+    
 class Critic_Network(nn.Module):
     """
     Critic Network
@@ -64,10 +65,6 @@ class Critic(object):
             return critic_loss
 
     def update_target_model(self):
-        with torch.no_grad():
-            model_dict = self.model.state_dict()
-            target_model_dict = self.target_model.state_dict()
-
-            for key in model_dict.keys():
-                target_model_dict[key] = self.tau * model_dict[key] + (1 - self.tau) * target_model_dict[key]
+        for target_weight, weight in zip(self.target_model.parameters(), self.model.parameters()):
+            target_weight.data.copy_(target_weight.data * (1.0 - self.tau) + weight.data * self.tau)
             

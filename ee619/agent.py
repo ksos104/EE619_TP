@@ -7,8 +7,8 @@ import numpy as np
 from numpy.core.defchararray import join
 import torch
 
-from ee619.actor import Actor
-from ee619.critic import Critic
+from actor import Actor
+from critic import Critic
 
 from collections import deque
 import random
@@ -35,7 +35,7 @@ class Agent:
         self.actor_hidden_units = (300, 600)
         self.critic_hidden_units = (300, 600)
 
-        self.actor_learning_rate = 1e-3
+        self.actor_learning_rate = 1e-4
         self.critic_learning_rate = 1e-3
 
         self.actor = Actor(observation_size=self.observation_size, action_size=self.action_size, hidden_units=self.actor_hidden_units, learning_rate=self.actor_learning_rate, tau=self.tau)
@@ -52,6 +52,7 @@ class Agent:
             actions = torch.Tensor(actions)
             rewards = torch.Tensor(rewards).unsqueeze(dim=1)
             next_observations = torch.Tensor(next_observations)
+            done = (np.array(done) == False) * 1
             done = torch.Tensor(done).unsqueeze(dim=1)
             
             if torch.cuda.is_available():
@@ -71,9 +72,9 @@ class Agent:
 
     def train_actor(self, observations):
         actions = self.actor.model(observations)
-        q_value = self.critic.model(observations, actions).mean()
+        q_values = self.critic.model(observations, actions)
 
-        actor_loss = self.actor.update_model(q_value)
+        actor_loss = self.actor.update_model(q_values)
 
         return actor_loss
 
@@ -98,6 +99,9 @@ class Agent:
         if len(self.memory) > self.memory_size:
             self.memory.popleft()
 
+    def decay_epsilon(self):
+        self.epsilon -= self.epsilon_decay
+
     def act(self, observation: np.ndarray, is_training=False):
         """Decides which action to take for the given observation."""
         observation = torch.from_numpy(observation)
@@ -107,7 +111,8 @@ class Agent:
         action = self.actor.model(observation).cpu().detach().numpy()
         if is_training:
             action = action + max(self.epsilon, self.epsilon_min) * self.ounoise.noise()
-            action = np.clip(action, -1.0, 1.0)
+        
+        action = np.clip(action, -1.0, 1.0)
 
         return action
 
