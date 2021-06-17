@@ -2,6 +2,11 @@ import torch
 import torch.nn as nn
 import numpy as np
     
+def fanin_init(size, fanin=None):
+    fanin = fanin or size[0]
+    v = 1. / np.sqrt(fanin)
+    return torch.Tensor(size).uniform_(-v, v)
+
 class Critic_Network(nn.Module):
     """
     Critic Network
@@ -9,11 +14,15 @@ class Critic_Network(nn.Module):
     input: state, action
     output: q value
     """
-    def __init__(self, observation_size, action_size, hidden_units):
+    def __init__(self, observation_size, action_size, hidden_units, eps=3e-2):
         super(Critic_Network, self).__init__()
         self.fc1 = nn.Linear(observation_size, hidden_units[0])
+        self.fc1.weight.data = fanin_init(self.fc1.weight.data.size())
         self.fc2 = nn.Linear(hidden_units[0] + action_size, hidden_units[1])
+        self.fc2.weight.data = fanin_init(self.fc2.weight.data.size())
         self.fc3 = nn.Linear(hidden_units[1], 1)
+        self.fc3.weight.data.uniform_(-eps, eps)
+
         self.relu = nn.ReLU()
 
     def forward(self, observations, actions):

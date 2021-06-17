@@ -1,4 +1,5 @@
 import os
+from os.path import abspath, dirname, realpath
 import torch
 
 from agent import Agent
@@ -8,11 +9,13 @@ import pybullet_envs
 import time
 from tensorboardX import SummaryWriter
 
+ROOT = dirname(abspath(realpath(__file__)))  # path to the ee619 directory
+
 def main():
     now = time.localtime()
     dir_name = '{0:04d}-{1:02d}-{2:02d}_{3:02d}-{4:02d}'.format(now.tm_year, now.tm_mon, now.tm_mday, now.tm_hour, now.tm_min)
-    summary = SummaryWriter('logs/{}'.format(dir_name))
-    output_dir = 'trained_models/{}'.format(dir_name)
+    summary = SummaryWriter(os.path.join(ROOT, 'logs/{}'.format(dir_name)))
+    output_dir = os.path.join(ROOT, 'trained_models/{}'.format(dir_name))
     os.makedirs(output_dir, exist_ok=True)
 
     env = gym.make('Walker2DBulletEnv-v0')
@@ -62,7 +65,7 @@ def main():
             torch.save(agent.actor.target_model.state_dict(), '{}/actor_t.pkl'.format(output_dir, seed_))
             torch.save(agent.critic.target_model.state_dict(), '{}/critic_t.pkl'.format(output_dir, seed_))
 
-            with open('logs/{}.txt'.format(dir_name), 'a') as f:
+            with open(os.path.join(ROOT, 'logs/{}.txt'.format(dir_name)), 'a') as f:
                 f.write("(Episode {}: Reward {}) The best model parameters were saved.\n".format(seed_, reward_sum))
 
             best_reward = reward_sum

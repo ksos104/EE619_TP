@@ -7,13 +7,15 @@ import numpy as np
 from numpy.core.defchararray import join
 import torch
 
-from actor import Actor
-from critic import Critic
-
 from collections import deque
 import random
 
 ROOT = dirname(abspath(realpath(__file__)))  # path to the ee619 directory
+
+import sys
+sys.path.append(ROOT)
+from actor import Actor
+from critic import Critic
 
 class Agent:
     """Agent for a Walker2DBullet environment."""
@@ -32,8 +34,8 @@ class Agent:
         self.ounoise = OUNoise(self.action_size)
 
         self.batch_size = 64
-        self.actor_hidden_units = (300, 600)
-        self.critic_hidden_units = (300, 600)
+        self.actor_hidden_units = (400, 300)
+        self.critic_hidden_units = (400, 300)
 
         self.actor_learning_rate = 1e-4
         self.critic_learning_rate = 1e-3
@@ -41,7 +43,7 @@ class Agent:
         self.actor = Actor(observation_size=self.observation_size, action_size=self.action_size, hidden_units=self.actor_hidden_units, learning_rate=self.actor_learning_rate, tau=self.tau)
         self.critic = Critic(observation_size=self.observation_size, action_size=self.action_size, hidden_units=self.critic_hidden_units, learning_rate=self.critic_learning_rate, tau=self.tau, gamma=self.gamma)
 
-        self.memory_size = 1000
+        self.memory_size = 1e+6
         self.memory = deque()
 
     def train(self):
@@ -125,9 +127,13 @@ class Agent:
         """
         actor_model = os.path.join(ROOT, 'actor.pkl')
         critic_model = os.path.join(ROOT, 'critic.pkl')
+        # actor_target_model = os.path.join(ROOT, 'actor_t.pkl')
+        # critic_target_model = os.path.join(ROOT, 'critic_t.pkl')
 
         self.actor.model.load_state_dict(torch.load(actor_model))
         self.critic.model.load_state_dict(torch.load(critic_model))
+        # self.actor.target_model.load_state_dict(torch.load(actor_target_model))
+        # self.critic.target_model.load_state_dict(torch.load(critic_target_model))
 
 class OUNoise:
     def __init__(self, action_size, mu=0, theta=0.15, sigma=0.2):

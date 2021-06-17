@@ -2,6 +2,11 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+def fanin_init(size, fanin=None):
+    fanin = fanin or size[0]
+    v = 1. / np.sqrt(fanin)
+    return torch.Tensor(size).uniform_(-v, v)
+
 class Actor_Network(nn.Module):
     """
     Actor Network
@@ -9,11 +14,15 @@ class Actor_Network(nn.Module):
     input: state
     output: action
     """
-    def __init__(self, observation_size, action_size, hidden_units):
+    def __init__(self, observation_size, action_size, hidden_units, eps=3e-2):
         super(Actor_Network, self).__init__()
         self.fc1 = nn.Linear(observation_size, hidden_units[0])
+        self.fc1.weight.data = fanin_init(self.fc1.weight.data.size())
         self.fc2 = nn.Linear(hidden_units[0], hidden_units[1])
+        self.fc2.weight.data = fanin_init(self.fc2.weight.data.size())
         self.fc3 = nn.Linear(hidden_units[1], action_size)
+        self.fc3.weight.data.uniform_(-eps, eps)
+
         self.relu = nn.ReLU()
         self.tanh = nn.Tanh()
 
