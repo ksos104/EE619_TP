@@ -4,7 +4,6 @@ from os.path import abspath, dirname, realpath
 
 from gym.spaces.box import Box
 import numpy as np
-from numpy.core.defchararray import join
 import torch
 
 from collections import deque
